@@ -31,8 +31,8 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 	private static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 	private static DynamoDB dynamoDB = new DynamoDB(client);
 
-	static String tableName = "billTable"; // System.getenv("databasename");
-	static String domainName = "prod.prernasharma.me"; //System.getenv("domainName");
+	static String tableName = System.getenv("databasename"); //"billTable"; 
+	static String domainName = System.getenv("domainName"); //"dev.prernasharma.me"; 
 
 	public Object handleRequest(SNSEvent request, Context context) {
 		
@@ -44,12 +44,13 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 			// convert json message to object
 			NotificationMessage msg = objMap.readValue(request.getRecords().get(0).getSNS().getMessage(),
 					NotificationMessage.class);
+			
 	
 			Table table = dynamoDB.getTable(tableName);
 		
 			Item fetchItem = table.getItem("dbId", msg.getUserId());
 			if (fetchItem == null) {
-				Item item = new Item().withPrimaryKey("dbId", "120").with("TTL", getExpiryTime(context));
+				Item item = new Item().withPrimaryKey("dbId", msg.getUserId()).with("TTL", getExpiryTime(context));
 				table.putItem(item);
 				
 				String FROM = "no-reply@"+domainName;
