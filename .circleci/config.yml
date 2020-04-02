@@ -1,0 +1,51 @@
+---
+version: 2
+jobs:
+  pr_check:
+    docker:
+      - image: circleci/openjdk:8-jdk
+      - image: maven
+    steps:
+    - checkout #check out source code
+    - run:
+        name: Install packages
+        command: sudo apt-get update && sudo apt-get install -y zip && sudo apt-get install -y python-pip && sudo pip install awscli && aws --version
+    - run:
+        name: maven build
+        command: mvn clean install && pwd && ls -al && ls -al target/
+
+  build_deploy:
+    docker:
+      - image: circleci/openjdk:8-jdk
+      - image: maven
+    steps:
+    - checkout #check out source code
+    - run:
+        name: Install packages
+        command: sudo apt-get update &&
+                 sudo apt-get install -y python-pip &&
+                 sudo pip install awscli
+    - run:
+        name: maven build
+        command: mvn clean install && pwd && ls -al && ls -al target/
+    - run:
+        name: Build deployment artifact
+        command: mkdir lambdafunction_artifact &&
+                 zip -r lambda-function.zip target/ROOT.jar &&
+                 pwd && ls -al && mv lambda-function.zip lambdafunction_artifact/ &&
+                 ls -al && pwd && cd lambdafunction_artifact && pwd && ls -al && cd .. && pwd && ls -al
+    - run: 
+        name: Copy artifact to S3
+        command: aws s3 cp lambdafunction_artifact/lambda-function.zip s3://${S3_CODEDEPLOY_BUCKET}/lambda-function.zip
+    
+workflows:
+  version: 2
+  pr-check-workflow:
+    jobs:
+    - pr_check
+  build-deploy-workflow:
+    jobs:
+    - build_deploy:
+        filters:
+          branches:
+            only: master
