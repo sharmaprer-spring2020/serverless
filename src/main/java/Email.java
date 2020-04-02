@@ -2,8 +2,10 @@
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import com.amazonaws.regions.Regions;
@@ -30,8 +32,10 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 	private static DynamoDB dynamoDB = new DynamoDB(client);
 
 	static String tableName = "billTable"; // System.getenv("databasename");
+	static String domainName = "prod.prernasharma.me"; //System.getenv("domainName");
 
 	public Object handleRequest(SNSEvent request, Context context) {
+		
 		try {
 			String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(Calendar.getInstance().getTime());
 			context.getLogger().log("Invocation started: " + timeStamp);
@@ -41,14 +45,40 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 			NotificationMessage msg = objMap.readValue(request.getRecords().get(0).getSNS().getMessage(),
 					NotificationMessage.class);
 	
-			// check if the dynamoDB has the item with userId
 			Table table = dynamoDB.getTable(tableName);
-			// table.getitem
+		
 			Item fetchItem = table.getItem("dbId", msg.getUserId());
 			if (fetchItem == null) {
-				Item item = new Item().withPrimaryKey("dbId", 120).with("TTL", getExpiryTime());
+				Item item = new Item().withPrimaryKey("dbId", 120).with("TTL", getExpiryTime(context));
 				table.putItem(item);
-				sendEmail();
+				
+				String FROM = "no-reply@"+domainName;
+
+				  String TO = msg.getEmailId() ;
+
+				  String SUBJECT = "Amazon SES test (list of bills)";
+
+				  String TEXTBODY = "This email was sent through Amazon SES "
+				      + "using the AWS SDK for Java.";
+				List<String> billIDs = new ArrayList<>();//billCount more than 1
+				billIDs.add("1234");
+				billIDs.add("5657");
+				
+			
+				List<String> billId = msg.getUrls();
+				List<String> url= new ArrayList<String>();
+				for(String id:billId) {
+					url.add("http://" + domainName + "/v1/bill/"+id);
+
+				}
+				
+				if (url.size()!= 0) {
+					String HTMLBODY = "Your bill urls are below: ";
+					for (String l:url) {
+						HTMLBODY = HTMLBODY + "<a href=" + l + ">" + l + "</a>" + "<br/>";
+					}
+					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY);
+				}
 			}
 	
 			timeStamp = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(Calendar.getInstance().getTime());
@@ -61,53 +91,25 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 
 	}
 
-	private static void sendEmail() {
-		String FROM = "sender@dev.prernasharma.me";
-
-		  // Replace recipient@example.com with a "To" address. If your account
-		  // is still in the sandbox, this address must be verified.
-		  String TO = "sharma.prer@husky.neu.edu";
-
-		  // The configuration set to use for this email. If you do not want to use a
-		  // configuration set, comment the following variable and the 
-		  // .withConfigurationSetName(CONFIGSET); argument below.
-		  //String CONFIGSET = "ConfigSet";
-
-		  // The subject line for the email.
-		  String SUBJECT = "Amazon SES test (AWS SDK for Java)";
-		  
-		  // The HTML body for the email.
-		  String HTMLBODY = "<h1>Amazon SES test (AWS SDK for Java)</h1>"
-		      + "<p>This email was sent with <a href='https://aws.amazon.com/ses/'>"
-		      + "Amazon SES</a> using the <a href='https://aws.amazon.com/sdk-for-java/'>" 
-		      + "AWS SDK for Java</a>";
-
-		  // The email body for recipients with non-HTML email clients.
-		  String TEXTBODY = "This email was sent through Amazon SES "
-		      + "using the AWS SDK for Java.";
-
-
-		    try {
+	private static void sendEmail(String from, String to, String sub, String textBody, String htmlBody) {
+		try {
 		      AmazonSimpleEmailService client = 
 		          AmazonSimpleEmailServiceClientBuilder.standard()
-		          // Replace US_WEST_2 with the AWS Region you're using for
-		          // Amazon SES.
+
 		            .withRegion(Regions.US_EAST_1).build();
 		      SendEmailRequest request = new SendEmailRequest()
 		          .withDestination(
-		              new Destination().withToAddresses(TO))
+		              new Destination().withToAddresses(to))
 		          .withMessage(new Message()
 		              .withBody(new Body()
 		                  .withHtml(new Content()
-		                      .withCharset("UTF-8").withData(HTMLBODY))
+		                      .withCharset("UTF-8").withData(htmlBody))
 		                  .withText(new Content()
-		                      .withCharset("UTF-8").withData(TEXTBODY)))
+		                      .withCharset("UTF-8").withData(textBody)))
 		              .withSubject(new Content()
-		                  .withCharset("UTF-8").withData(SUBJECT)))
-		          .withSource(FROM);
-		          // Comment or remove the next line if you are not using a
-		          // configuration set
-		          //.withConfigurationSetName(CONFIGSET);
+		                  .withCharset("UTF-8").withData(sub)))
+		          .withSource(from);
+		          
 		      client.sendEmail(request);
 		      System.out.println("Email sent!");
 		    } catch (Exception ex) {
@@ -115,25 +117,25 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 		          + ex.getMessage());
 		    }
 		}
-	private static long getExpiryTime() {
+	
+	private long getExpiryTime(Context context) {
 		try {
-			TimeZone timeZone = TimeZone.getTimeZone("UTC");
-			Calendar cali = Calendar.getInstance(timeZone);
-			Date todayCal = cali.getTime();
+			TimeZone tz = TimeZone.getTimeZone("UTC");
+			Calendar cal = Calendar.getInstance(tz);
+			Date todayCal = cal.getTime();
 			SimpleDateFormat crunchifyFor = new SimpleDateFormat("MMM dd yyyy HH:mm:ss.SSS zzz");
-			// SimpleDateFormat crunchifyFormat = new SimpleDateFormat("MMM dd yyyy
-			// HH:mm:ss.SSS zzz");
-			crunchifyFor.setTimeZone(timeZone);
+			
+			crunchifyFor.setTimeZone(tz);
 			String curTime = crunchifyFor.format(todayCal);
 			Date curDate;
 
 			curDate = crunchifyFor.parse(curTime);
-			Long epoch = curDate.getTime() / 1000;
-			long expiryTime = epoch + (60 * 60);
+			Long epochTime = curDate.getTime() / 1000;
+			long expiryTime = epochTime + (60 * 60);
 			return expiryTime;
+			
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			context.getLogger().log(e.getMessage());
 		}
 		return 0;
 
