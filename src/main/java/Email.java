@@ -56,6 +56,7 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 				String FROM = "no-reply@"+domainName;
 
 				  String TO = msg.getEmailId() ;
+				  context.getLogger().log("Sending email to id: "+TO);
 
 				  String SUBJECT = "Amazon SES test (list of bills)";
 
