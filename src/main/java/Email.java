@@ -49,7 +49,7 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 		
 			Item fetchItem = table.getItem("dbId", msg.getUserId());
 			if (fetchItem == null) {
-				Item item = new Item().withPrimaryKey("dbId", 120).with("TTL", getExpiryTime(context));
+				Item item = new Item().withPrimaryKey("dbId", "120").with("TTL", getExpiryTime(context));
 				table.putItem(item);
 				
 				String FROM = "no-reply@"+domainName;
@@ -77,7 +77,7 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 					for (String l:url) {
 						HTMLBODY = HTMLBODY + "<a href=" + l + ">" + l + "</a>" + "<br/>";
 					}
-					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY);
+					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY,context);
 				}
 			}
 	
@@ -91,30 +91,21 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 
 	}
 
-	private static void sendEmail(String from, String to, String sub, String textBody, String htmlBody) {
+	private static void sendEmail(String from, String to, String sub, String textBody, String htmlBody,Context context) {
 		try {
-		      AmazonSimpleEmailService client = 
-		          AmazonSimpleEmailServiceClientBuilder.standard()
-
-		            .withRegion(Regions.US_EAST_1).build();
-		      SendEmailRequest request = new SendEmailRequest()
-		          .withDestination(
-		              new Destination().withToAddresses(to))
-		          .withMessage(new Message()
-		              .withBody(new Body()
-		                  .withHtml(new Content()
-		                      .withCharset("UTF-8").withData(htmlBody))
-		                  .withText(new Content()
-		                      .withCharset("UTF-8").withData(textBody)))
-		              .withSubject(new Content()
-		                  .withCharset("UTF-8").withData(sub)))
-		          .withSource(from);
+		      AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard().withRegion(Regions.US_EAST_1).build();
+		      SendEmailRequest request = new SendEmailRequest().withDestination(new Destination().withToAddresses(to))
+		    		  					.withMessage(new Message().withBody(new Body().withHtml(new Content()
+		    		  							.withCharset("UTF-8").withData(htmlBody)).withText(new Content()
+		    		  							.withCharset("UTF-8").withData(textBody))).withSubject(new Content()
+		    		  							.withCharset("UTF-8").withData(sub))).withSource(from);
 		          
 		      client.sendEmail(request);
-		      System.out.println("Email sent!");
+		      context.getLogger().log("Email sent!");
+		      
 		    } catch (Exception ex) {
-		      System.out.println("The email was not sent. Error message: " 
-		          + ex.getMessage());
+		    	context.getLogger().log("The email was not sent. Error message: "+ex.getMessage()); 
+		         
 		    }
 		}
 	
