@@ -31,7 +31,7 @@ jobs:
     - run:
         name: Build deployment artifact
         command: mkdir lambdafunction_artifact &&
-                 zip -r lambda-function.zip target/ROOT.jar &&
+                 zip -r lambda-function.zip target/lambda-function.jar &&
                  pwd && ls -al && mv lambda-function.zip lambdafunction_artifact/ &&
                  ls -al && pwd && cd lambdafunction_artifact && pwd && ls -al && cd .. && pwd && ls -al
     - run: 
