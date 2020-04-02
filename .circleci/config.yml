@@ -33,7 +33,7 @@ jobs:
         command: aws s3 cp target/lambda-function.jar s3://${S3_CODEDEPLOY_BUCKET}/lambda-function.jar
     - run: 
         name: Update lambda function with latest code in s3
-        command: aws lambda update-function-code --function-name ${LAMBDA_FUNCTION_NAME} --zip-file fileb://./target/${S3_KEY} --s3-bucket ${S3_CODEDEPLOY_BUCKET} --s3-key ${S3_KEY} 
+        command: aws lambda update-function-code --function-name ${LAMBDA_FUNCTION_NAME} --zip-file fileb://./target/${S3_KEY}
 
     
 workflows:
