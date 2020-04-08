@@ -60,11 +60,6 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 
 				String SUBJECT = "Amazon SES test (list of bills)";
 
-				String TEXTBODY = "This email was sent through Amazon SES " + "using the AWS SDK for Java.";
-				List<String> billIDs = new ArrayList<>();// billCount more than 1
-				billIDs.add("1234");
-				billIDs.add("5657");
-
 				List<String> billId = msg.getUrls();
 				List<String> url = new ArrayList<String>();
 				for (String id : billId) {
@@ -75,15 +70,18 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 				if (url.size() != 0) {
 					int counter = 1;
 					String HTMLBODY = "Your bill urls are below: ";
+					String TEXTBODY = "Your bill urls are below:";
 					for (String l : url) {
 						HTMLBODY = HTMLBODY + "<br/>" + counter + "." + "<a href=" + l + ">" + l + "</a>" + "<br/>";
+						TEXTBODY =  TEXTBODY + "\n" + counter + "." + l + "\n" ;
 						counter++;
 					}
 					HTMLBODY = HTMLBODY + "<br/>" + "<br/>" + "Thanks!";
+					TEXTBODY = TEXTBODY + "\n \n" + "Thanks!";
 					sendEmail(FROM, TO, SUBJECT, TEXTBODY, HTMLBODY, context);
 				} else {
 					String HTMLBODY = "There are no bills with this due date ";
-
+					String TEXTBODY = "There are no bills with this due date ";
 					sendEmail(FROM, TO, SUBJECT, TEXTBODY, HTMLBODY, context);
 				}
 			}
