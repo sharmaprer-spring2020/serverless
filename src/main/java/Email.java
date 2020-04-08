@@ -70,15 +70,23 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 				List<String> billId = msg.getUrls();
 				List<String> url= new ArrayList<String>();
 				for(String id:billId) {
-					url.add("http://" + domainName + "/v1/bill/"+id);
+					url.add("https://" + domainName + "/v1/bill/"+id);
 
 				}
 				
 				if (url.size()!= 0) {
+					int counter = 1;
 					String HTMLBODY = "Your bill urls are below: ";
 					for (String l:url) {
-						HTMLBODY = HTMLBODY + "<a href=" + l + ">" + l + "</a>" + "<br/>";
+						HTMLBODY = HTMLBODY +"<br/>" + counter + "." + "<a href=" + l + ">" + l + "</a>" + "<br/>";
+						counter++;
 					}
+					HTMLBODY = HTMLBODY +"<br/>" + "<br/>" + "Thanks!";
+					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY,context);
+				}
+				else {
+					String HTMLBODY = "There are no bills with this due date ";
+					
 					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY,context);
 				}
 			}
