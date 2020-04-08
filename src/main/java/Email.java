@@ -78,8 +78,10 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 					int counter = 1;
 					String HTMLBODY = "Your bill urls are below: ";
 					for (String l:url) {
-						HTMLBODY = HTMLBODY +"<br/>" + counter+ "<a href=" + l + ">" + l + "</a>" + "<br/>";
+						HTMLBODY = HTMLBODY +"<br/>" + counter + "." + "<a href=" + l + ">" + l + "</a>" + "<br/>";
+						counter++;
 					}
+					HTMLBODY = HTMLBODY +"<br/>" + "<br/>" + "Thanks!";
 					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY,context);
 				}
 				else {
