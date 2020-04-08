@@ -52,42 +52,39 @@ public class Email implements RequestHandler<SNSEvent, Object> {
 			if (fetchItem == null) {
 				Item item = new Item().withPrimaryKey("dbId", msg.getUserId()).with("TTL", getExpiryTime(context));
 				table.putItem(item);
-				
-				String FROM = "no-reply@"+domainName;
 
-				  String TO = msg.getEmailId() ;
-				  context.getLogger().log("Sending email to id: "+TO);
+				String FROM = "no-reply@" + domainName;
 
-				  String SUBJECT = "Amazon SES test (list of bills)";
+				String TO = msg.getEmailId();
+				context.getLogger().log("Sending email to id: " + TO);
 
-				  String TEXTBODY = "This email was sent through Amazon SES "
-				      + "using the AWS SDK for Java.";
-				List<String> billIDs = new ArrayList<>();//billCount more than 1
+				String SUBJECT = "Amazon SES test (list of bills)";
+
+				String TEXTBODY = "This email was sent through Amazon SES " + "using the AWS SDK for Java.";
+				List<String> billIDs = new ArrayList<>();// billCount more than 1
 				billIDs.add("1234");
 				billIDs.add("5657");
-				
-			
+
 				List<String> billId = msg.getUrls();
-				List<String> url= new ArrayList<String>();
-				for(String id:billId) {
-					url.add("https://" + domainName + "/v1/bill/"+id);
+				List<String> url = new ArrayList<String>();
+				for (String id : billId) {
+					url.add("https://" + domainName + "/v1/bill/" + id);
 
 				}
-				
-				if (url.size()!= 0) {
+
+				if (url.size() != 0) {
 					int counter = 1;
 					String HTMLBODY = "Your bill urls are below: ";
-					for (String l:url) {
-						HTMLBODY = HTMLBODY +"<br/>" + counter + "." + "<a href=" + l + ">" + l + "</a>" + "<br/>";
+					for (String l : url) {
+						HTMLBODY = HTMLBODY + "<br/>" + counter + "." + "<a href=" + l + ">" + l + "</a>" + "<br/>";
 						counter++;
 					}
-					HTMLBODY = HTMLBODY +"<br/>" + "<br/>" + "Thanks!";
-					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY,context);
-				}
-				else {
+					HTMLBODY = HTMLBODY + "<br/>" + "<br/>" + "Thanks!";
+					sendEmail(FROM, TO, SUBJECT, TEXTBODY, HTMLBODY, context);
+				} else {
 					String HTMLBODY = "There are no bills with this due date ";
-					
-					sendEmail(FROM,TO,SUBJECT,TEXTBODY,HTMLBODY,context);
+
+					sendEmail(FROM, TO, SUBJECT, TEXTBODY, HTMLBODY, context);
 				}
 			}
 	
